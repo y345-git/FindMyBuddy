@@ -1,0 +1,7 @@
+{
+  "name": "Find My Buddy",
+  "description": "A modern platform for connecting with neighbors and local buddies. Features a secure approval system, role-based access, and PIN-code-based discovery.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
