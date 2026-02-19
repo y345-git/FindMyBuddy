@@ -1,10 +1,18 @@
-
 import mysql from 'mysql2/promise';
 
 let pool: mysql.Pool | null = null;
 
+declare global {
+  var mysqlGlobal: mysql.Pool | undefined;
+}
+
 export const getDb = () => {
   if (!pool) {
+    if (process.env.NODE_ENV === 'production' && global.mysqlGlobal) {
+      pool = global.mysqlGlobal;
+      return pool;
+    }
+
     const host = process.env.MYSQL_HOST;
     const user = process.env.MYSQL_USER;
     const password = process.env.MYSQL_PASSWORD;
@@ -26,7 +34,9 @@ export const getDb = () => {
         waitForConnections: true,
         connectionLimit: 5,
         queueLimit: 0,
-        connectTimeout: 10000,
+        connectTimeout: 20000, // Increased timeout for serverless cold starts
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 0,
       };
 
       // Only add SSL if explicitly requested
@@ -35,6 +45,11 @@ export const getDb = () => {
       }
 
       pool = mysql.createPool(config);
+
+      if (process.env.NODE_ENV === 'production') {
+        global.mysqlGlobal = pool;
+      }
+
       console.log(`Connected to MySQL at ${host} (SSL: ${useSsl})`);
     } catch (err: any) {
       console.error('DATABASE_POOL_ERROR:', err.message);

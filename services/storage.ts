@@ -53,18 +53,31 @@ export const storageService = {
   },
 
   registerUser: async (newUser: Omit<User, 'id' | 'status' | 'role' | 'createdAt'>): Promise<User> => {
-    const response = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newUser),
-    });
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      });
 
-    const data = await response.json().catch(() => ({ message: 'Invalid response from server' }));
+      const text = await response.text();
+      let data: any;
 
-    if (!response.ok) {
-      throw new Error(data.details || data.message || 'Registration failed');
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('SERVER_HTML_ERROR:', text);
+        throw new Error(`Server Configuration Error: ${text.substring(0, 100)}...`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.details || data.message || 'Registration failed');
+      }
+      return data;
+    } catch (error: any) {
+      console.error('REGISTER_ERROR:', error);
+      throw error;
     }
-    return data;
   },
 
   updateUserStatus: async (userId: string, status: 'approved' | 'rejected') => {
