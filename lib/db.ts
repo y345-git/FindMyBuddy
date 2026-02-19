@@ -1,9 +1,9 @@
-import mysql from 'mysql2/promise';
+import { createPool, Pool, PoolOptions } from 'mysql2/promise';
 
-let pool: mysql.Pool | null = null;
+let pool: Pool | undefined;
 
 declare global {
-  var mysqlGlobal: mysql.Pool | undefined;
+  var mysqlGlobal: Pool | undefined;
 }
 
 export const getDb = () => {
@@ -20,12 +20,15 @@ export const getDb = () => {
     const port = process.env.MYSQL_PORT || '3306';
     const useSsl = process.env.MYSQL_SSL === 'true';
 
+    // Log connection attempt (without password)
+    console.log(`Initializing DB connection to ${host}:${port} User: ${user} DB: ${database}`);
+
     if (!host || !user || !database) {
       throw new Error(`Database configuration missing. Required: host, user, database.`);
     }
 
     try {
-      const config: mysql.PoolOptions = {
+      const config: PoolOptions = {
         host,
         user,
         password,
@@ -44,7 +47,7 @@ export const getDb = () => {
         config.ssl = { rejectUnauthorized: false };
       }
 
-      pool = mysql.createPool(config);
+      pool = createPool(config);
 
       if (process.env.NODE_ENV === 'production') {
         global.mysqlGlobal = pool;
